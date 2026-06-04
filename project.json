@@ -1,0 +1,21 @@
+{
+  "overview": "An AI-powered learning app for grade 9 students featuring monthly subject voting by class toppers, AI explanations, Q&A, quizzes with points, and a competitive leaderboard.",
+  "features": [
+    "Monthly subject voting by top students",
+    "AI-generated explanations per subject",
+    "Ask questions and get AI answers",
+    "Quizzes with scoring and points",
+    "Leaderboard with rankings"
+  ],
+  "category": "education",
+  "tags": [
+    "education",
+    "ai",
+    "quiz",
+    "leaderboard",
+    "grade9",
+    "school",
+    "learning"
+  ],
+  "last_updated": "2026-05-18T06:18:56.462Z"
+}

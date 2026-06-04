@@ -1,0 +1,117 @@
+type VotingEventView = 
+ record {
+   createdAt: Timestamp;
+   hasVoted: bool;
+   id: EventId;
+   isLocked: bool;
+   proposedSubjects: vec text;
+   voteCounts: vec record {
+                     text;
+                     nat;
+                   };
+   winnerSubject: opt text;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserId = principal;
+type Timestamp = int;
+type SubjectView = 
+ record {
+   description: text;
+   endDate: Timestamp;
+   id: SubjectId;
+   startDate: Timestamp;
+   title: text;
+ };
+type SubjectId = nat;
+type StudentView = 
+ record {
+   displayName: text;
+   id: UserId;
+   rank: nat;
+   roleLabel: text;
+   totalPoints: nat;
+ };
+type QuizView = 
+ record {
+   createdAt: Timestamp;
+   id: QuizId;
+   questions: vec QuizQuestion;
+   subjectId: SubjectId;
+ };
+type QuizQuestion = 
+ record {
+   id: QuestionId;
+   options: vec QuizOption;
+   questionText: text;
+ };
+type QuizOption = 
+ record {
+   isCorrect: bool;
+   "text": text;
+ };
+type QuizId = nat;
+type QuizAttempt = 
+ record {
+   answers: vec nat;
+   attemptedAt: Timestamp;
+   id: nat;
+   isPerfect: bool;
+   quizId: QuizId;
+   score: nat;
+   studentId: UserId;
+ };
+type QuestionId = nat;
+type QnAEntry = 
+ record {
+   answer: text;
+   createdAt: Timestamp;
+   id: nat;
+   question: text;
+   studentId: UserId;
+   subjectId: SubjectId;
+ };
+type EventId = nat;
+service : {
+  _initializeAccessControl: () -> ();
+  askQuestion: (subjectId: SubjectId, question: text) -> (QnAEntry);
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  castVote: (eventId: EventId, subject: text) -> ();
+  clearMyGeminiApiKey: () -> ();
+  createVotingEvent: (proposedSubjects: vec text) -> (VotingEventView);
+  generateQuiz: (subjectId: SubjectId) -> (QuizView);
+  getActiveSubject: () -> (opt SubjectView) query;
+  getActiveVotingEvent: () -> (opt VotingEventView) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getLeaderboard: () -> (vec StudentView) query;
+  getMyProfile: () -> (opt StudentView) query;
+  getMyQnA: (subjectId: SubjectId) -> (vec QnAEntry) query;
+  getMyQuizAttempts: () -> (vec QuizAttempt) query;
+  getMyRank: () -> (nat) query;
+  getQuiz: (subjectId: SubjectId) -> (opt QuizView) query;
+  getRoleInfo: (id: principal) ->
+   (record {
+      displayName: text;
+      isAdmin: bool;
+      isOwner: bool;
+    }) query;
+  getStudentProfile: (id: UserId) -> (opt StudentView) query;
+  isCallerAdmin: () -> (bool) query;
+  isMyGeminiConfigured: () -> (bool) query;
+  lockVoting: (eventId: EventId) -> (opt text);
+  registerStudent: (displayName: text) -> (StudentView);
+  registerWithPassword: (displayName: text, password: text) ->
+   (variant {
+      err: text;
+      ok: StudentView;
+    });
+  setActiveSubject: (title: text, startDate: Timestamp, endDate:
+   Timestamp) -> (SubjectView);
+  setMyGeminiApiKey: (key: text) -> ();
+  submitQuizAttempt: (quizId: QuizId, answers: vec nat) -> (QuizAttempt);
+  updateMyDisplayName: (name: text) -> ();
+}

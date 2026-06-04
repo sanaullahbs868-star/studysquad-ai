@@ -1,0 +1,121 @@
+// Version: 1.0.0
+type Data__45091661<K, V> = {var count : Nat__369452189; kvs : [var ?(K, V)]};
+type EventId__361868567 = Nat;
+type Internal__112456046<K, V> =
+  {children : [var ?Node__462531142<K, V>]; data : Data__45091661<K, V>};
+type Leaf__57387986<K, V> = {data : Data__45091661<K, V>};
+type Map__148053270<K, V> = Map__706432854<K, V>;
+type Map__528685958<K, V> =
+  {var root : Node__462531142<K, V>; var size : Nat__369452189};
+type Map__706432854<K, V> = Map__528685958<K, V>;
+type Nat__369452189 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__462531142<K, V> =
+  {#internal : Internal__112456046<K, V>; #leaf : Leaf__57387986<K, V>};
+type QnAEntry__187956870 =
+  {
+    answer : Text;
+    createdAt : Timestamp__301639476;
+    id : Nat;
+    question : Text;
+    studentId : UserId__158757552;
+    subjectId : SubjectId__402408784
+  };
+type QuestionId__77764146 = Nat;
+type QuizAttempt__143628499 =
+  {
+    answers : [Nat];
+    attemptedAt : Timestamp__301639476;
+    id : Nat;
+    isPerfect : Bool;
+    quizId : QuizId__438791917;
+    score : Nat;
+    studentId : UserId__158757552
+  };
+type QuizId__438791917 = Nat;
+type QuizOption__343041035 = {isCorrect : Bool; text : Text};
+type QuizQuestion__446491677 =
+  {
+    id : QuestionId__77764146;
+    options : [QuizOption__343041035];
+    questionText : Text
+  };
+type Quiz__109335985 =
+  {
+    var createdAt : Timestamp__301639476;
+    id : QuizId__438791917;
+    var questions : [QuizQuestion__446491677];
+    subjectId : SubjectId__402408784
+  };
+type Student__26715999 =
+  {var displayName : Text; id : UserId__158757552; var totalPoints : Nat};
+type SubjectId__402408784 = Nat;
+type Subject__69355533 =
+  {
+    var description : Text;
+    var endDate : Timestamp__301639476;
+    id : SubjectId__402408784;
+    var startDate : Timestamp__301639476;
+    var title : Text
+  };
+type Timestamp__301639476 = Int;
+type UserId__158757552 = Principal;
+type UserRole__1073662873 = {#admin; #guest; #user};
+type VotingEvent__399167948 =
+  {
+    var createdAt : Timestamp__301639476;
+    id : EventId__361868567;
+    var isLocked : Bool;
+    var proposedSubjects : [Text];
+    var votes : [(UserId__158757552, Text)];
+    var winnerSubject : ?Text
+  };
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__148053270<Principal, UserRole__1073662873>
+    };
+  stable attemptState : {var nextAttemptId : Nat};
+  stable attempts :
+    {
+      var root : Node__462531142<Nat, QuizAttempt__143628499>;
+      var size : Nat__369452189
+    };
+  stable geminiKeys :
+    {
+      var root : Node__462531142<UserId__158757552, Text>;
+      var size : Nat__369452189
+    };
+  stable mathInitState : {var initialized : Bool};
+  stable qna :
+    {
+      var root : Node__462531142<Nat, QnAEntry__187956870>;
+      var size : Nat__369452189
+    };
+  stable qnaState : {var nextQnAId : Nat};
+  stable quizState : {var nextQuizId : Nat};
+  stable quizzes :
+    {
+      var root : Node__462531142<QuizId__438791917, Quiz__109335985>;
+      var size : Nat__369452189
+    };
+  stable students :
+    {
+      var root : Node__462531142<UserId__158757552, Student__26715999>;
+      var size : Nat__369452189
+    };
+  stable subjectState :
+    {var activeSubjectId : ?SubjectId__402408784; var nextSubjectId : Nat};
+  stable subjects :
+    {
+      var root : Node__462531142<SubjectId__402408784, Subject__69355533>;
+      var size : Nat__369452189
+    };
+  stable votingEvents :
+    {
+      var root : Node__462531142<EventId__361868567, VotingEvent__399167948>;
+      var size : Nat__369452189
+    };
+  stable votingState : {var nextEventId : Nat}
+};
