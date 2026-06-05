@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import GameServer from "@/game-server/server";
+import { GameServer } from "../../game-server/server";
 import styles from "./GameServer.module.css";
 
 const GameServerPage: React.FC = () => {
@@ -27,7 +27,7 @@ const GameServerPage: React.FC = () => {
     const player2 = server.playerJoin("p2", "Bob");
     const player3 = server.playerJoin("p3", "Charlie");
 
-    // Promote some to admins
+    // Send welcome messages
     server.playerChat("p1", "Hello everyone!");
     server.playerChat("p2", "Hey! Welcome to StudySquad!");
 
