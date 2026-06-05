@@ -10,15 +10,7 @@ export interface ChatMessage {
   flaggedWords: string[];
 }
 
-const BAD_WORDS = [
-  "badword1",
-  "badword2",
-  "curse1",
-  "curse2",
-  "spam",
-  "abuse",
-  "hate",
-];
+const BAD_WORDS = ["badword1", "badword2", "curse1", "curse2", "spam", "abuse", "hate"];
 
 export class ChatManager {
   private messages: ChatMessage[] = [];
@@ -38,27 +30,12 @@ export class ChatManager {
     };
 
     this.messages.push(message);
-
-    if (!isClean) {
-      console.log(
-        `⚠️ ${player.username} sent flagged message for: ${flaggedWords.join(", ")}`
-      );
-    }
-
     return message;
   }
 
-  private checkContent(text: string): {
-    flaggedWords: string[];
-    isClean: boolean;
-  } {
-    const flaggedWords = BAD_WORDS.filter((word) =>
-      text.toLowerCase().includes(word.toLowerCase())
-    );
-    return {
-      flaggedWords,
-      isClean: flaggedWords.length === 0,
-    };
+  private checkContent(text: string): { flaggedWords: string[]; isClean: boolean } {
+    const flaggedWords = BAD_WORDS.filter((word) => text.toLowerCase().includes(word.toLowerCase()));
+    return { flaggedWords, isClean: flaggedWords.length === 0 };
   }
 
   private censorContent(text: string): string {
@@ -76,10 +53,5 @@ export class ChatManager {
 
   getFlaggedMessages(): ChatMessage[] {
     return this.messages.filter((m) => m.isFlagged);
-  }
-
-  clearMessages(): void {
-    this.messages = [];
-    this.messageId = 0;
   }
 }
