@@ -1,59 +1,100 @@
-import Map "mo:core/Map";
-import Principal "mo:core/Principal";
-import AccessControl "mo:caffeineai-authorization/access-control";
-import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
-import CommonTypes "types/common";
-import StudentTypes "types/students";
-import VotingTypes "types/voting";
-import SubjectTypes "types/subjects";
-import QuizTypes "types/quizzes";
-import MixinStudents "mixins/students-api";
-import MixinVoting "mixins/voting-api";
-import MixinSubjects "mixins/subjects-api";
-import MixinQuizzes "mixins/quizzes-api";
-import MixinGemini "mixins/gemini-api";
-import Time "mo:core/Time";
-import SubjectLib "lib/subjects";
+import Debug "mo:base/Debug";
+import Principal "mo:base/Principal";
+import HashMap "mo:base/HashMap";
+import Text "mo:base/Text";
 
+actor StudySquadServer {
 
+    // Define what data we store for each player
+    public type PlayerProfile = {
+        username : Text;
+        role : Text;        // "beginner", "developer", "admin", "owner"
+        money : Nat;
+        xp : Nat;
+        isFlying : Bool;
+    };
 
-actor {
-  // --- Authorization ---
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
+    // Store players using their unique Web3 Principal ID
+    stable var entries : [(Principal, PlayerProfile)] = [];
+    let players = HashMap.fromIter<Principal, PlayerProfile>(entries.vals(), 10, Principal.equal, Principal.hash);
 
-  // --- Per-user Gemini keys ---
-  let geminiKeys : Map.Map<CommonTypes.UserId, Text> = Map.empty();
-  include MixinGemini(accessControlState, geminiKeys);
+    // Simple backend word filter
+    private func filterChat(msg : Text) : Text {
+        // Simple demonstration: replace a target bad word
+        if (Text.contains(msg, #text "badword")) {
+            "####";
+        } else {
+            msg;
+        };
+    };
 
-  // --- Students ---
-  let students : Map.Map<CommonTypes.UserId, StudentTypes.Student> = Map.empty();
-  include MixinStudents(accessControlState, students);
+    // 1. Join / Register Player
+    public shared (msg) func joinGame(chosenName : Text) : async PlayerProfile {
+        let caller = msg.caller;
+        switch (players.get(caller)) {
+            case (?profile) profile;
+            case (null) {
+                let newProfile : PlayerProfile = {
+                    username = chosenName;
+                    role = "beginner";
+                    money = 1000; // Starting money
+                    xp = 0;
+                    isFlying = false;
+                };
+                players.put(caller, newProfile);
+                newProfile;
+            };
+        };
+    };
 
-  // --- Voting ---
-  let votingEvents : Map.Map<CommonTypes.EventId, VotingTypes.VotingEvent> = Map.empty();
-  let votingState = { var nextEventId : Nat = 0 };
-  include MixinVoting(accessControlState, students, votingEvents, votingState);
+    // 2. Chat and Command Processing
+    public shared (msg) func sendChatMessage(textMessage : Text) : async Text {
+        let caller = msg.caller;
+        let player = switch (players.get(caller)) {
+            case (?p) p;
+            case (null) return "Error: Please join the game first.";
+        };
 
-  // --- Subjects ---
-  let subjects : Map.Map<CommonTypes.SubjectId, SubjectTypes.Subject> = Map.empty();
-  let subjectState = { var activeSubjectId : ?CommonTypes.SubjectId = null; var nextSubjectId : Nat = 0 };
-  let qna : Map.Map<Nat, SubjectTypes.QnAEntry> = Map.empty();
-  let qnaState = { var nextQnAId : Nat = 0 };
-  include MixinSubjects(accessControlState, subjects, subjectState, qna, qnaState, geminiKeys);
+        // Check for Admin Commands
+        if (Text.startsWith(textMessage, #text "/")) {
+            if (textMessage == "/fly") {
+                if (player.role == "admin" or player.role == "owner" or player.role == "developer") {
+                    player.isFlying := not player.isFlying;
+                    players.put(caller, player);
+                    return "System: Flying mode toggled!";
+                } else {
+                    return "System: Denied. Only Admins/Owners can fly.";
+                };
+            };
+            return "System: Unknown command.";
+        };
 
-  // --- Quizzes ---
-  let quizzes : Map.Map<CommonTypes.QuizId, QuizTypes.Quiz> = Map.empty();
-  let quizState = { var nextQuizId : Nat = 0 };
-  let attempts : Map.Map<Nat, QuizTypes.QuizAttempt> = Map.empty();
-  let attemptState = { var nextAttemptId : Nat = 0 };
-  include MixinQuizzes(accessControlState, students, quizzes, quizState, attempts, attemptState, geminiKeys);
+        // If regular chat, filter it
+        let safeMessage = filterChat(textMessage);
+        return "[" ^ player.role ^ "] " ^ player.username ^ ": " ^ safeMessage;
+    };
 
-  // --- Math subject initialization ---
-  let mathInitState = { var initialized : Bool = false };
-  if (not mathInitState.initialized) {
-    let now = Time.now();
-    ignore SubjectLib.setActiveSubject(subjects, subjectState, "Mathematics", "Grade 9 Mathematics — the active subject for this month.", now, now + 2_592_000_000_000_000, now);
-    mathInitState.initialized := true;
-  };
-};
+    // 3. Economy System: Buy XP
+    public shared (msg) func buyXP() : async Text {
+        let caller = msg.caller;
+        let player = switch (players.get(caller)) {
+            case (?p) p;
+            case (null) return "Player profile not found.";
+        };
+
+        let xpCost : Nat = 500; // Expensive for beginners
+
+        if (player.role == "developer" or player.role == "owner") {
+            player.xp += 100;
+            players.put(caller, player);
+            return "Success: Developer granted free XP!";
+        } else if (player.money >= xpCost) {
+            player.money -= xpCost;
+            player.xp += 10;
+            players.put(caller, player);
+            return "Success: Bought 10 XP. Balance: " ^ Nat.toText(player.money);
+        } else {
+            return "Failed: XP costs " ^ Nat.toText(xpCost) ^ " cash. You need more money!";
+        };
+    };
+}
