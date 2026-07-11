@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>GitHub AI Agent (REST)</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 2rem auto; }
+    textarea { width: 100%; height: 120px; }
+    input, button { padding: 0.5rem; margin: 0.25rem 0; }
+    pre { background: #f6f6f6; padding: 1rem; white-space: pre-wrap; }
+    .col { display:flex; gap:1rem; align-items:center; }
+    label { display:block; margin: 0.4rem 0; }
+  </style>
+</head>
+<body>
+  <h1>GitHub AI Agent (REST)</h1>
+
+  <div>
+    <button id="syncBtn">Sync from GitHub</button>
+    <span id="syncStatus">Not synced</span>
+  </div>
+
+  <h2>Chat</h2>
+  <textarea id="query" placeholder="Ask about your profile, repos, or how to act..."></textarea>
+  <div class="col">
+    <button id="askBtn">Ask</button>
+    <div id="responseBlock" style="flex:1">
+      <h4>Response</h4>
+      <pre id="response">No response yet.</pre>
+    </div>
+  </div>
+
+  <h2>Create Issue (example action)</h2>
+  <div>
+    <label>Repo (owner/repo): <input id="issueRepo" placeholder="owner/repo" /></label>
+    <label>Title: <input id="issueTitle" placeholder="Issue title" style="width:80%"/></label>
+    <label>Body:</label>
+    <textarea id="issueBody" placeholder="Issue description..."></textarea>
+    <label><input type="checkbox" id="confirmIssue" /> Confirm create (will create issue when checked)</label>
+    <div>
+      <button id="createIssueBtn">Create Issue (preview if not confirmed)</button>
+    </div>
+    <pre id="issueResult">No action taken yet.</pre>
+  </div>
+
+  <script>
+    async function postJSON(url, data) {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      return r.json();
+    }
+
+    document.getElementById("syncBtn").addEventListener("click", async () => {
+      document.getElementById("syncStatus").innerText = "Syncing...";
+      try {
+        const res = await postJSON("/api/sync", {});
+        document.getElementById("syncStatus").innerText = JSON.stringify(res, null, 2);
+      } catch (err) {
+        document.getElementById("syncStatus").innerText = "Error: " + err;
+      }
+    });
+
+    document.getElementById("askBtn").addEventListener("click", async () => {
+      const query = document.getElementById("query").value;
+      if (!query) return alert("Enter a question.");
+      document.getElementById("response").innerText = "Thinking...";
+      try {
+        const res = await postJSON("/api/chat", { query });
+        document.getElementById("response").innerText = JSON.stringify(res, null, 2);
+      } catch (err) {
+        document.getElementById("response").innerText = "Error: " + err;
+      }
+    });
+
+    document.getElementById("createIssueBtn").addEventListener("click", async () => {
+      const repo = document.getElementById("issueRepo").value.trim();
+      const title = document.getElementById("issueTitle").value.trim();
+      const body = document.getElementById("issueBody").value;
+      const confirm = document.getElementById("confirmIssue").checked;
+      if (!repo || !title) return alert("Repo and title are required.");
+      document.getElementById("issueResult").innerText = "Processing...";
+      try {
+        const res = await postJSON("/api/action", { action: "create_issue", params: { repo_full_name: repo, title, body }, confirm });
+        document.getElementById("issueResult").innerText = JSON.stringify(res, null, 2);
+      } catch (err) {
+        document.getElementById("issueResult").innerText = "Error: " + err;
+      }
+    });
+  </script>
+</body>
+</html>
